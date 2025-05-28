@@ -96,6 +96,12 @@ pub enum Resolver<T> {
     Missing(Vec<Pubkey>),
 }
 
+impl<T> Resolver<T> {
+    pub fn pair<U>(self, other: Resolver<U>) -> Resolver<(T, U)> {
+        pair(self, other)
+    }
+}
+
 pub fn pair<T, U>(a: Resolver<T>, b: Resolver<U>) -> Resolver<(T, U)> {
     match (a, b) {
         (Resolver::Resolved(a), Resolver::Resolved(b)) => Resolver::Resolved((a, b)),
