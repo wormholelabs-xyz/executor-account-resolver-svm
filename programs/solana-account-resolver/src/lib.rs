@@ -148,6 +148,7 @@ pub mod solana_account_resolver {
         Ok(())
     }
 
+    #[instruction(discriminator = [192, 102, 177, 206, 149, 99, 9, 192])]
     pub fn accounts_to_execute(
         ctx: Context<Resolve>,
     ) -> Result<Resolver<GroupsOf<SerializableInstruction>>> {
