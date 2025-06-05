@@ -75,9 +75,9 @@ describe("solana-account-resolver", () => {
   });
 
   it("derives the right discriminators", async () => {
-    const expectedBytes = Buffer.from([192, 102, 177, 206, 149, 99, 9, 192]);
+    const expectedBytes = Buffer.from([148, 184, 169, 222, 207, 8, 154, 127]);
     const discriminator = await splDiscriminate(
-      "executor-account-resolver:relay-vaa-v1"
+      "executor-account-resolver:execute-vaa-v1"
     );
     expect(expectedBytes).to.deep.equal(discriminator);
     expect(

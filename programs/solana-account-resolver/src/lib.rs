@@ -2,6 +2,7 @@
 use std::ops::{FromResidual, Try};
 
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction, Bumps, InstructionData};
+use executor_account_resolver_svm::RESOLVER_EXECUTE_VAA_V1;
 
 declare_id!("2JrXahZgppXqGUBETfTJign3TTVCFznDa5oxgthYuT69");
 
@@ -148,7 +149,7 @@ pub mod solana_account_resolver {
         Ok(())
     }
 
-    #[instruction(discriminator = [192, 102, 177, 206, 149, 99, 9, 192])]
+    #[instruction(discriminator = &RESOLVER_EXECUTE_VAA_V1)]
     pub fn accounts_to_execute(
         ctx: Context<Resolve>,
     ) -> Result<Resolver<GroupsOf<SerializableInstruction>>> {
