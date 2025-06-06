@@ -1,6 +1,6 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction, InstructionData};
 use executor_account_resolver_svm::{
-    GroupsOf, RemainingAccounts, Resolver, SerializableInstruction, RESOLVER_EXECUTE_VAA_V1,
+    InstructionGroup, InstructionGroups, RemainingAccounts, Resolver, RESOLVER_EXECUTE_VAA_V1,
     RESOLVER_PUBKEY_PAYER,
 };
 
@@ -19,9 +19,7 @@ pub mod solana_account_resolver {
     }
 
     #[instruction(discriminator = &RESOLVER_EXECUTE_VAA_V1)]
-    pub fn accounts_to_execute(
-        ctx: Context<Resolve>,
-    ) -> Result<Resolver<GroupsOf<SerializableInstruction>>> {
+    pub fn accounts_to_execute(ctx: Context<Resolve>) -> Result<Resolver<InstructionGroups>> {
         Ok(accounts_to_execute2(ctx))
     }
 
@@ -31,7 +29,7 @@ pub mod solana_account_resolver {
     }
 }
 
-pub fn accounts_to_execute2(ctx: Context<Resolve>) -> Resolver<GroupsOf<SerializableInstruction>> {
+pub fn accounts_to_execute2(ctx: Context<Resolve>) -> Resolver<InstructionGroups> {
     // TODO: use an example where we load an account but not necessarily use its
     // pubkey in the final thing (e.g. reading stuff off state)
     // TODO: example for parallel loading (to reduce number of roundtrips when we can)
@@ -56,7 +54,10 @@ pub fn accounts_to_execute2(ctx: Context<Resolve>) -> Resolver<GroupsOf<Serializ
         accounts: accs.to_account_metas(None),
         data: (instruction::ExampleInstruction {}).data(),
     };
-    Resolver::Resolved(GroupsOf(vec![vec![instruction.into()]]))
+    Resolver::Resolved(InstructionGroups(vec![InstructionGroup {
+        instructions: vec![instruction.into()],
+        address_lookup_tables: vec![],
+    }]))
 }
 
 #[account]
