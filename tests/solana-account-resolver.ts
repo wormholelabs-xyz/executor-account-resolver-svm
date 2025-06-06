@@ -1,9 +1,15 @@
 import { splDiscriminate } from "@solana/spl-type-length-value";
-import { AccountMeta } from "@solana/web3.js";
+import {
+  AccountMeta,
+  AddressLookupTableAccount,
+  ComputeBudgetProgram,
+} from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { SolanaAccountResolver } from "../target/types/solana_account_resolver";
 import { expect } from "chai";
+import { decode } from "@coral-xyz/anchor/dist/cjs/utils/bytes/base64";
+import { IdlCoder } from "@coral-xyz/anchor/dist/cjs/coder/borsh/idl";
 
 describe("solana-account-resolver", () => {
   // Configure the client to use the local cluster.
@@ -36,10 +42,10 @@ describe("solana-account-resolver", () => {
       .rpc();
     console.log("Your transaction signature", tx);
     try {
-      const result = await resolveInstructions(program);
+      const result = await resolveInstructions(program, payer);
       for (const group of result) {
         // TODO: send whole group as tx etc.
-        for (const instruction of group) {
+        for (const instruction of group.instructions) {
           console.log(instruction);
 
           // 32 9s
@@ -47,7 +53,6 @@ describe("solana-account-resolver", () => {
             Buffer.from("payer_00000000000000000000000000")
           );
 
-          let tx = new anchor.web3.Transaction();
           let accountsWithPayerOverride = instruction.accounts.map(
             (account) => {
               if (account.pubkey.equals(payerConst)) {
@@ -56,19 +61,32 @@ describe("solana-account-resolver", () => {
               return account;
             }
           );
-          tx.add(
-            new anchor.web3.TransactionInstruction({
-              keys: accountsWithPayerOverride,
-              programId: instruction.programId,
-              data: instruction.data,
-            })
+          const ix = new anchor.web3.TransactionInstruction({
+            keys: accountsWithPayerOverride,
+            programId: instruction.programId,
+            data: instruction.data,
+          });
+          const luts = (
+            await Promise.all(
+              group.addressLookupTables.map((lut) =>
+                program.provider.connection.getAddressLookupTable(lut)
+              )
+            )
+          ).map((r) => r.value);
+          let { blockhash, lastValidBlockHeight } =
+            await program.provider.connection.getLatestBlockhash();
+          const messageV0 = new anchor.web3.TransactionMessage({
+            payerKey: payer.publicKey,
+            instructions: [ix],
+            recentBlockhash: blockhash,
+          }).compileToV0Message(luts);
+          const tx = new anchor.web3.VersionedTransaction(messageV0);
+          tx.sign([payer]);
+          let signature = await program.provider.connection.sendTransaction(tx);
+          await program.provider.connection.confirmTransaction(
+            { signature, blockhash, lastValidBlockHeight },
+            "confirmed"
           );
-          let signature = await anchor
-            .getProvider()
-            .connection.sendTransaction(tx, [payer]);
-          await anchor
-            .getProvider()
-            .connection.confirmTransaction(signature, "confirmed");
         }
       }
     } catch (e) {
@@ -95,28 +113,75 @@ type Instruction = {
   data: Buffer;
 };
 
+type InstructionGroup = {
+  instructions: Instruction[];
+  addressLookupTables: anchor.web3.PublicKey[];
+};
+
 // a function that calls accountsToExecute repeatedly until it returns ok. as
 // long as it returns missing, we add the returned missing keys to
 // remainingAccounts and call accountsToExecute again
 async function resolveInstructions(
-  program: Program<SolanaAccountResolver>
-): Promise<Instruction[][]> {
-  let remainingAccounts: AccountMeta[] = [];
+  program: Program<SolanaAccountResolver>,
+  payerWallet: anchor.web3.Keypair
+): Promise<InstructionGroup[]> {
+  const remainingAccounts: AccountMeta[] = [];
+  const luts: AddressLookupTableAccount[] = [];
   let runs = 0;
   while (true) {
     runs++;
-    const result = await program.methods
+    // support simulation with lookup table
+    // adapted from https://github.com/solana-foundation/anchor/blob/0bdfa3f760635cc83bbda13f9a9d22d1558d1776/ts/packages/anchor/src/program/namespace/views.ts#L26C7-L42C39
+    const ix = await program.methods
       .accountsToExecute()
       .remainingAccounts(remainingAccounts)
-      .view();
+      .instruction();
+    let { blockhash } = await program.provider.connection.getLatestBlockhash();
+    const messageV0 = new anchor.web3.TransactionMessage({
+      payerKey: payerWallet.publicKey,
+      instructions: [ix],
+      recentBlockhash: blockhash,
+    }).compileToV0Message(luts);
+    const tx = new anchor.web3.VersionedTransaction(messageV0);
+    const simulationResult =
+      await program.provider.connection.simulateTransaction(tx, {
+        replaceRecentBlockhash: true,
+      });
+    const returnPrefix = `Program return: ${program.programId} `;
+    let returnLog = simulationResult.value.logs.find((l) =>
+      l.startsWith(returnPrefix)
+    );
+    if (!returnLog) {
+      throw new Error("View expected return log");
+    }
+
+    let returnData = decode(returnLog.slice(returnPrefix.length));
+    let returnType = program.idl.instructions.find(
+      (i) => i.name === "accountsToExecute"
+    ).returns;
+    if (!returnType) {
+      throw new Error("View expected return type");
+    }
+
+    const coder = IdlCoder.fieldLayout({ type: returnType }, program.idl.types);
+    const result = coder.decode(returnData);
+    console.log(JSON.stringify(result, undefined, 2));
     if (result.resolved) {
       console.log("Runs", runs);
       return result.resolved[0][0];
     } else {
-      let newAccountMetas = result.missing[0].map((key) => {
+      let newAccountMetas = result.missing[0].accounts.map((key) => {
         return { pubkey: key, isSigner: false, isWritable: false };
       });
       remainingAccounts.push(...newAccountMetas);
+      let newLookupTables = (
+        await Promise.all(
+          result.missing[0].addressLookupTables.map((lut) =>
+            program.provider.connection.getAddressLookupTable(lut)
+          )
+        )
+      ).map((r) => r.value);
+      luts.push(...newLookupTables);
     }
   }
 }

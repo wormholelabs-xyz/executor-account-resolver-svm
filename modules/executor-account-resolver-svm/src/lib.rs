@@ -47,6 +47,14 @@ pub const RESOLVER_PUBKEY_KEYPAIR_09: Pubkey =
     Pubkey::new_from_array(*b"keypair_09_000000000000000000000");
 
 #[derive(AnchorSerialize)]
+pub struct InstructionGroups(pub Vec<InstructionGroup>);
+
+#[derive(AnchorSerialize)]
+pub struct InstructionGroup {
+    pub instructions: Vec<SerializableInstruction>,
+    pub address_lookup_tables: Vec<Pubkey>,
+}
+#[derive(AnchorSerialize)]
 pub struct SerializableInstruction {
     pub program_id: Pubkey,
     pub accounts: Vec<SerializableAccountMeta>,
@@ -84,9 +92,6 @@ impl From<AccountMeta> for SerializableAccountMeta {
     }
 }
 
-#[derive(AnchorSerialize)]
-pub struct GroupsOf<T: AnchorSerialize>(pub Vec<Vec<T>>);
-
 pub struct RemainingAccounts<'c, 'info> {
     pub remaining_accounts: &'c [AccountInfo<'info>],
 }
@@ -118,7 +123,10 @@ fn load<'c, 'info>(
     if let Some(found) = accs.iter().find(|acc_info| *acc_info.key == key) {
         Resolver::Resolved(found)
     } else {
-        Resolver::Missing(vec![key])
+        Resolver::Missing(MissingAccounts {
+            accounts: vec![key],
+            address_lookup_tables: vec![],
+        })
     }
 }
 
@@ -134,7 +142,13 @@ fn load_deserialize<'c, 'info, T: AccountDeserialize>(
 #[derive(AnchorSerialize)]
 pub enum Resolver<T> {
     Resolved(T),
-    Missing(Vec<Pubkey>),
+    Missing(MissingAccounts),
+}
+
+#[derive(AnchorSerialize)]
+pub struct MissingAccounts {
+    pub accounts: Vec<Pubkey>,
+    pub address_lookup_tables: Vec<Pubkey>,
 }
 
 impl<T> Resolver<T> {
@@ -149,14 +163,17 @@ pub fn pair<T, U>(a: Resolver<T>, b: Resolver<U>) -> Resolver<(T, U)> {
         (Resolver::Resolved(_), Resolver::Missing(missing)) => Resolver::Missing(missing),
         (Resolver::Missing(missing), Resolver::Resolved(_)) => Resolver::Missing(missing),
         (Resolver::Missing(mut missing_a), Resolver::Missing(missing_b)) => {
-            missing_a.extend(missing_b);
+            missing_a.accounts.extend(missing_b.accounts);
+            missing_a
+                .address_lookup_tables
+                .extend(missing_b.address_lookup_tables);
             Resolver::Missing(missing_a)
         }
     }
 }
 
 impl<T> FromResidual for Resolver<T> {
-    fn from_residual(residual: Vec<Pubkey>) -> Self {
+    fn from_residual(residual: MissingAccounts) -> Self {
         Resolver::Missing(residual)
     }
 }
@@ -164,7 +181,7 @@ impl<T> FromResidual for Resolver<T> {
 impl<T> Try for Resolver<T> {
     type Output = T;
 
-    type Residual = Vec<Pubkey>;
+    type Residual = MissingAccounts;
 
     fn from_output(output: Self::Output) -> Self {
         Resolver::Resolved(output)
