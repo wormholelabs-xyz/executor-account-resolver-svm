@@ -4,10 +4,10 @@ use executor_account_resolver_svm::{
     RESOLVER_PUBKEY_PAYER,
 };
 
-declare_id!("2JrXahZgppXqGUBETfTJign3TTVCFznDa5oxgthYuT69");
+declare_id!("8mjNDtRMN7Sjq2ZVjCjKJUUaCfUdfZLoeYREmYs3yKSi");
 
 #[program]
-pub mod solana_account_resolver {
+pub mod example_iterative_resolution {
 
     use super::*;
 
