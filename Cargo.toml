@@ -1,5 +1,6 @@
 [workspace]
-members = [ "modules/executor-account-resolver-svm",
+members = [ 
+    "modules/*",
     "programs/*"
 ]
 resolver = "2"

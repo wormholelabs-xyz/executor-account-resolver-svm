@@ -1,12 +1,12 @@
 [package]
-name = "solana-account-resolver"
+name = "executor-account-resolver-svm-program"
 version = "0.1.0"
 description = "Created with Anchor"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "solana_account_resolver"
+name = "executor_account_resolver_svm_program"
 
 [features]
 default = []

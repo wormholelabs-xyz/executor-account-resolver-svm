@@ -544,11 +544,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
 
 [[package]]
+name = "example-iterative-resolution"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "executor-account-resolver-svm",
+]
+
+[[package]]
 name = "executor-account-resolver-svm"
 version = "0.0.1"
 dependencies = [
  "anchor-lang",
  "solana-sha256-hasher",
+]
+
+[[package]]
+name = "executor-account-resolver-svm-program"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "executor-account-resolver-svm",
 ]
 
 [[package]]
@@ -1150,14 +1166,6 @@ dependencies = [
  "solana-program-error",
  "solana-program-memory",
  "solana-pubkey",
-]
-
-[[package]]
-name = "solana-account-resolver"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "executor-account-resolver-svm",
 ]
 
 [[package]]
