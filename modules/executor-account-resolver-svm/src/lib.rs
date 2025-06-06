@@ -3,7 +3,48 @@ use std::ops::{FromResidual, Try};
 
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction, Bumps};
 
+// discriminators
 pub const RESOLVER_EXECUTE_VAA_V1: [u8; 8] = [148, 184, 169, 222, 207, 8, 154, 127];
+
+// account placeholders
+// these follow the padding pattern of https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0009_guardian_signer.md#prefixes-used
+/// A placeholder to represent the relayer's account that will pay for the transaction.
+/// This will be replaced by the relayer with their pubkey.
+pub const RESOLVER_PUBKEY_PAYER: Pubkey =
+    Pubkey::new_from_array(*b"payer_00000000000000000000000000");
+/// A placeholder to represent the Wormhole Core Bridge Posted VAA.
+/// This will be replaced by the relayer with the posted VAA to be executed.
+pub const RESOLVER_PUBKEY_POSTED_VAA: Pubkey =
+    Pubkey::new_from_array(*b"posted_vaa_000000000000000000000");
+/// A placeholder to represent the Wormhole Verify VAA Shim Guardian Signatures account.
+/// This will be replaced by the relayer with an account with the signatures of the VAA to be executed.
+/// See https://github.com/wormhole-foundation/wormhole/tree/fe4a33bafae3eb2ba51dff16efaab70e50be111d/svm/wormhole-core-shims/programs/verify-vaa for more info.
+pub const RESOLVER_PUBKEY_SHIM_VAA_SIGS: Pubkey =
+    Pubkey::new_from_array(*b"shim_vaa_sigs_000000000000000000");
+/// A placeholder to represent a new keypair's pubkey.
+/// This will be replaced by the relayer with a newly generated keypair.
+/// This can be used to make a new account in one instruction and refer to the same account in subsequent instructions.
+/// Consts for 10 accounts are provided.
+pub const RESOLVER_PUBKEY_KEYPAIR_00: Pubkey =
+    Pubkey::new_from_array(*b"keypair_00_000000000000000000000");
+pub const RESOLVER_PUBKEY_KEYPAIR_01: Pubkey =
+    Pubkey::new_from_array(*b"keypair_01_000000000000000000000");
+pub const RESOLVER_PUBKEY_KEYPAIR_02: Pubkey =
+    Pubkey::new_from_array(*b"keypair_02_000000000000000000000");
+pub const RESOLVER_PUBKEY_KEYPAIR_03: Pubkey =
+    Pubkey::new_from_array(*b"keypair_03_000000000000000000000");
+pub const RESOLVER_PUBKEY_KEYPAIR_04: Pubkey =
+    Pubkey::new_from_array(*b"keypair_04_000000000000000000000");
+pub const RESOLVER_PUBKEY_KEYPAIR_05: Pubkey =
+    Pubkey::new_from_array(*b"keypair_05_000000000000000000000");
+pub const RESOLVER_PUBKEY_KEYPAIR_06: Pubkey =
+    Pubkey::new_from_array(*b"keypair_06_000000000000000000000");
+pub const RESOLVER_PUBKEY_KEYPAIR_07: Pubkey =
+    Pubkey::new_from_array(*b"keypair_07_000000000000000000000");
+pub const RESOLVER_PUBKEY_KEYPAIR_08: Pubkey =
+    Pubkey::new_from_array(*b"keypair_08_000000000000000000000");
+pub const RESOLVER_PUBKEY_KEYPAIR_09: Pubkey =
+    Pubkey::new_from_array(*b"keypair_09_000000000000000000000");
 
 #[derive(AnchorSerialize)]
 pub struct SerializableInstruction {
