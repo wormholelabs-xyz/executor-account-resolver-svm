@@ -43,7 +43,9 @@ describe("solana-account-resolver", () => {
           console.log(instruction);
 
           // 32 9s
-          let payerConst = new anchor.web3.PublicKey(Array(32).fill(9));
+          let payerConst = new anchor.web3.PublicKey(
+            Buffer.from("payer_00000000000000000000000000")
+          );
 
           let tx = new anchor.web3.Transaction();
           let accountsWithPayerOverride = instruction.accounts.map(

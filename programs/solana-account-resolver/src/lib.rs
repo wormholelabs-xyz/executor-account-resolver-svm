@@ -1,6 +1,7 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction, InstructionData};
 use executor_account_resolver_svm::{
     GroupsOf, RemainingAccounts, Resolver, SerializableInstruction, RESOLVER_EXECUTE_VAA_V1,
+    RESOLVER_PUBKEY_PAYER,
 };
 
 declare_id!("2JrXahZgppXqGUBETfTJign3TTVCFznDa5oxgthYuT69");
@@ -30,9 +31,6 @@ pub mod solana_account_resolver {
     }
 }
 
-// TODO: better magic
-const PAYER: Pubkey = Pubkey::new_from_array([9u8; 32]);
-
 pub fn accounts_to_execute2(ctx: Context<Resolve>) -> Resolver<GroupsOf<SerializableInstruction>> {
     // TODO: use an example where we load an account but not necessarily use its
     // pubkey in the final thing (e.g. reading stuff off state)
@@ -46,7 +44,7 @@ pub fn accounts_to_execute2(ctx: Context<Resolve>) -> Resolver<GroupsOf<Serializ
     let baz = ctx_accs.load_deserialize::<MyAccount>(baz_key)?;
     let (qux_key, _) = Pubkey::find_program_address(&[b"qux", &[baz.data]], &crate::ID);
     let accs = accounts::ExampleInstruction {
-        payer: PAYER,
+        payer: RESOLVER_PUBKEY_PAYER,
         foo: foo_key,
         bar: bar_key,
         baz: baz_key,
