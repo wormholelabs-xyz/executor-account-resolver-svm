@@ -1,13 +1,14 @@
 [toolchain]
 anchor_version = "0.31.1"
-package_manager = "yarn"
 solana_version = "2.1.20"
+package_manager = "yarn"
 
 [features]
 resolution = true
 skip-lint = false
 
 [programs.localnet]
+example-lookup-table-resolution = "v3pcEfuzsPBGQ8Zy1jvtWq4iwugEWC2f3xgPd32eZgQ"
 example_iterative_resolution = "8mjNDtRMN7Sjq2ZVjCjKJUUaCfUdfZLoeYREmYs3yKSi"
 executor_account_resolver_svm_program = "GeSLWQHGZRWhrdqo5Zvaa3JonhzQmfEmJSuHJwmRebPw"
 
@@ -15,7 +16,7 @@ executor_account_resolver_svm_program = "GeSLWQHGZRWhrdqo5Zvaa3JonhzQmfEmJSuHJwm
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

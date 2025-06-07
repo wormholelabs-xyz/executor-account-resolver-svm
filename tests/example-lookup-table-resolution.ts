@@ -1,20 +1,28 @@
+import { splDiscriminate } from "@solana/spl-type-length-value";
+import {
+  AccountMeta,
+  AddressLookupTableAccount,
+  ComputeBudgetProgram,
+} from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { splDiscriminate } from "@solana/spl-type-length-value";
+import { ExampleLookupTableResolution } from "../target/types/example_lookup_table_resolution";
 import { expect } from "chai";
-import { ExampleIterativeResolution } from "../target/types/example_iterative_resolution";
+import { decode } from "@coral-xyz/anchor/dist/cjs/utils/bytes/base64";
+import { IdlCoder } from "@coral-xyz/anchor/dist/cjs/coder/borsh/idl";
 import { resolveInstructions } from "./utils";
 
-describe("example-iterative-executor-account-resolver", () => {
+describe("example-lookup-table-resolution", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
 
   const program = anchor.workspace
-    .ExampleIterativeResolution as Program<ExampleIterativeResolution>;
+    .ExampleLookupTableResolution as Program<ExampleLookupTableResolution>;
 
   const payer = anchor.web3.Keypair.generate();
-  // airdrop to payer
+
   it("Is initialized!", async () => {
+    // airdrop to payer
     await anchor
       .getProvider()
       .connection.confirmTransaction(
@@ -24,20 +32,27 @@ describe("example-iterative-executor-account-resolver", () => {
         "confirmed"
       );
 
+    const recentSlot = (await program.provider.connection.getSlot()) - 1;
     const tx = await program.methods
-      .initialize()
+      .initialize(new anchor.BN(recentSlot))
       .accounts({
         payer: program.provider.publicKey,
       })
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({
+          units: 1_000_000,
+        }),
+      ])
       .rpc();
-    console.log("Your transaction signature", tx);
+    console.log("LUT initialization signature", tx);
+    // wait for lut to warm up
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     const result = await resolveInstructions(
       program.provider,
       program.programId,
       payer
     );
     for (const group of result) {
-      // TODO: send whole group as tx etc.
       for (const instruction of group.instructions) {
         console.log(instruction);
 
@@ -67,9 +82,14 @@ describe("example-iterative-executor-account-resolver", () => {
           await program.provider.connection.getLatestBlockhash();
         const messageV0 = new anchor.web3.TransactionMessage({
           payerKey: payer.publicKey,
-          instructions: [ix],
+          instructions: [
+            ix,
+            ComputeBudgetProgram.setComputeUnitLimit({
+              units: 1_000_000,
+            }),
+          ],
           recentBlockhash: blockhash,
-        }).compileToV0Message(luts);
+        }).compileToV0Message(luts); // if you remove luts here, you can see the transaction fail with `encoding overruns Uint8Array`
         const tx = new anchor.web3.VersionedTransaction(messageV0);
         tx.sign([payer]);
         let signature = await program.provider.connection.sendTransaction(tx);
@@ -88,7 +108,7 @@ describe("example-iterative-executor-account-resolver", () => {
     );
     expect(expectedBytes).to.deep.equal(discriminator);
     expect(
-      program.idl.instructions.find((x) => x.name === "accountsToExecute")
+      program.idl.instructions.find((x) => x.name === "resolveExecuteVaaV1")
         .discriminator
     ).to.deep.equal([...expectedBytes]);
   });
