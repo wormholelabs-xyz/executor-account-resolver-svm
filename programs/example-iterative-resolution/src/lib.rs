@@ -19,7 +19,10 @@ pub mod example_iterative_resolution {
     }
 
     #[instruction(discriminator = &RESOLVER_EXECUTE_VAA_V1)]
-    pub fn accounts_to_execute(ctx: Context<Resolve>) -> Result<Resolver<InstructionGroups>> {
+    pub fn accounts_to_execute(
+        ctx: Context<Resolve>,
+        _vaa_body: Vec<u8>,
+    ) -> Result<Resolver<InstructionGroups>> {
         Ok(accounts_to_execute2(ctx))
     }
 

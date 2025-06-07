@@ -49,7 +49,7 @@ export async function resolveInstructions(
     // adapted from https://github.com/solana-foundation/anchor/blob/0bdfa3f760635cc83bbda13f9a9d22d1558d1776/ts/packages/anchor/src/program/namespace/views.ts#L26C7-L42C39
     console.log(remainingAccounts.length);
     const ix = await program.methods
-      .resolveExecuteVaaV1()
+      .resolveExecuteVaaV1(Buffer.from(""))
       .remainingAccounts(remainingAccounts)
       .instruction();
     let { blockhash } = await program.provider.connection.getLatestBlockhash();
