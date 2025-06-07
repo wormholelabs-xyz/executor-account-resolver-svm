@@ -3,7 +3,25 @@ use std::ops::{FromResidual, Try};
 
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction, Bumps};
 
+// hash inputs
+/// The hash input for `RESOLVER_EXECUTE_VAA_V1`.
+pub const RESOLVER_EXECUTE_VAA_V1_SEED: &[u8] = b"executor-account-resolver:execute-vaa-v1";
+/// The PDA seed for calculating the return account.
+pub const RESOLVER_RESULT_ACCOUNT_SEED: &[u8] = b"executor-account-resolver:result";
+
 // discriminators
+/// Discriminator for resolving the instructions for executing a v1 VAA.
+///
+/// Usage:
+///
+/// ```rust
+/// #[instruction(discriminator = &RESOLVER_EXECUTE_VAA_V1)]
+/// pub fn accounts_to_execute(ctx: Context<Resolve>) -> Result<Resolver<InstructionGroups>> {
+///     Ok(Resolver::Resolved(InstructionGroups(vec![...])))
+/// }
+/// ```
+///
+/// Ensure that you have the `interface-instructions` feature enabled.
 pub const RESOLVER_EXECUTE_VAA_V1: [u8; 8] = [148, 184, 169, 222, 207, 8, 154, 127];
 
 // account placeholders
@@ -46,15 +64,15 @@ pub const RESOLVER_PUBKEY_KEYPAIR_08: Pubkey =
 pub const RESOLVER_PUBKEY_KEYPAIR_09: Pubkey =
     Pubkey::new_from_array(*b"keypair_09_000000000000000000000");
 
-#[derive(AnchorSerialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct InstructionGroups(pub Vec<InstructionGroup>);
 
-#[derive(AnchorSerialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct InstructionGroup {
     pub instructions: Vec<SerializableInstruction>,
     pub address_lookup_tables: Vec<Pubkey>,
 }
-#[derive(AnchorSerialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct SerializableInstruction {
     pub program_id: Pubkey,
     pub accounts: Vec<SerializableAccountMeta>,
@@ -75,7 +93,7 @@ impl From<Instruction> for SerializableInstruction {
     }
 }
 
-#[derive(AnchorSerialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct SerializableAccountMeta {
     pub pubkey: Pubkey,
     pub is_signer: bool,
@@ -139,38 +157,39 @@ fn load_deserialize<'c, 'info, T: AccountDeserialize>(
     Resolver::Resolved(data)
 }
 
-#[derive(AnchorSerialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub enum Resolver<T> {
     Resolved(T),
     Missing(MissingAccounts),
+    Account(),
 }
 
-#[derive(AnchorSerialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct MissingAccounts {
     pub accounts: Vec<Pubkey>,
     pub address_lookup_tables: Vec<Pubkey>,
 }
 
-impl<T> Resolver<T> {
-    pub fn pair<U>(self, other: Resolver<U>) -> Resolver<(T, U)> {
-        pair(self, other)
-    }
-}
+// impl<T> Resolver<T> {
+//     pub fn pair<U>(self, other: Resolver<U>) -> Resolver<(T, U)> {
+//         pair(self, other)
+//     }
+// }
 
-pub fn pair<T, U>(a: Resolver<T>, b: Resolver<U>) -> Resolver<(T, U)> {
-    match (a, b) {
-        (Resolver::Resolved(a), Resolver::Resolved(b)) => Resolver::Resolved((a, b)),
-        (Resolver::Resolved(_), Resolver::Missing(missing)) => Resolver::Missing(missing),
-        (Resolver::Missing(missing), Resolver::Resolved(_)) => Resolver::Missing(missing),
-        (Resolver::Missing(mut missing_a), Resolver::Missing(missing_b)) => {
-            missing_a.accounts.extend(missing_b.accounts);
-            missing_a
-                .address_lookup_tables
-                .extend(missing_b.address_lookup_tables);
-            Resolver::Missing(missing_a)
-        }
-    }
-}
+// pub fn pair<T, U>(a: Resolver<T>, b: Resolver<U>) -> Resolver<(T, U)> {
+//     match (a, b) {
+//         (Resolver::Resolved(a), Resolver::Resolved(b)) => Resolver::Resolved((a, b)),
+//         (Resolver::Resolved(_), Resolver::Missing(missing)) => Resolver::Missing(missing),
+//         (Resolver::Missing(missing), Resolver::Resolved(_)) => Resolver::Missing(missing),
+//         (Resolver::Missing(mut missing_a), Resolver::Missing(missing_b)) => {
+//             missing_a.accounts.extend(missing_b.accounts);
+//             missing_a
+//                 .address_lookup_tables
+//                 .extend(missing_b.address_lookup_tables);
+//             Resolver::Missing(missing_a)
+//         }
+//     }
+// }
 
 impl<T> FromResidual for Resolver<T> {
     fn from_residual(residual: MissingAccounts) -> Self {
@@ -191,6 +210,10 @@ impl<T> Try for Resolver<T> {
         match self {
             Resolver::Resolved(output) => std::ops::ControlFlow::Continue(output),
             Resolver::Missing(residual) => std::ops::ControlFlow::Break(residual),
+            Resolver::Account() => std::ops::ControlFlow::Break(MissingAccounts {
+                accounts: vec![],
+                address_lookup_tables: vec![],
+            }),
         }
     }
 }
@@ -203,8 +226,7 @@ mod test {
     #[test]
     fn test_resolver_discriminators_match() {
         // https://github.com/solana-program/libraries/blob/fcd6052feccb74b5ae4f7a8a7858e85d7f4adc93/discriminator/src/discriminator.rs#L40-L42
-        let hash_input = "executor-account-resolver:execute-vaa-v1";
-        let hash_bytes = hashv(&[hash_input.as_bytes()]).to_bytes();
+        let hash_bytes = hashv(&[RESOLVER_EXECUTE_VAA_V1_SEED]).to_bytes();
         let mut discriminator_bytes = [0u8; 8];
         discriminator_bytes.copy_from_slice(&hash_bytes[..8]);
         assert_eq!(RESOLVER_EXECUTE_VAA_V1, discriminator_bytes);

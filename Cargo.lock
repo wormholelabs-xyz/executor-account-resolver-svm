@@ -552,6 +552,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "example-lookup-table-resolution"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "executor-account-resolver-svm",
+]
+
+[[package]]
 name = "executor-account-resolver-svm"
 version = "0.0.1"
 dependencies = [
