@@ -92,6 +92,7 @@ pub mod example_lookup_table_resolution {
     #[instruction(discriminator = &RESOLVER_EXECUTE_VAA_V1)]
     pub fn resolve_execute_vaa_v1<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, Resolve>,
+        _vaa_body: Vec<u8>,
     ) -> Result<Resolver<InstructionGroups>> {
         let result_pubkey = Pubkey::find_program_address(&[RESOLVER_RESULT_ACCOUNT_SEED], &ID).0;
         if ctx.remaining_accounts.len() == 0 {
