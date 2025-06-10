@@ -95,7 +95,7 @@ pub mod example_lookup_table_resolution {
         _vaa_body: Vec<u8>,
     ) -> Result<Resolver<InstructionGroups>> {
         let result_pubkey = Pubkey::find_program_address(&[RESOLVER_RESULT_ACCOUNT_SEED], &ID).0;
-        if ctx.remaining_accounts.len() == 0 {
+        if ctx.remaining_accounts.is_empty() {
             // first run, we need our lut pointer, result account, payer for increasing the size of the result, and system program for transferring lamports
             return Ok(Resolver::Missing(MissingAccounts {
                 accounts: vec![
