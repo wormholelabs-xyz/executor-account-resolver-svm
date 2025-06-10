@@ -1,6 +1,6 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction, InstructionData};
 use executor_account_resolver_svm::{
-    InstructionGroup, InstructionGroups, RemainingAccounts, Resolver, RESOLVER_EXECUTE_VAA_V1,
+    InstructionGroup, InstructionGroups, MissingAccounts, Resolver, RESOLVER_EXECUTE_VAA_V1,
     RESOLVER_PUBKEY_PAYER,
 };
 
@@ -32,17 +32,44 @@ pub mod example_iterative_resolution {
     }
 }
 
+pub fn find_account<'c, 'info>(
+    accs: &'c [AccountInfo<'info>],
+    pubkey: Pubkey,
+) -> Option<&'c AccountInfo<'info>> {
+    accs.iter().find(|acc_info| *acc_info.key == pubkey)
+}
+
+pub fn missing_account(pubkey: Pubkey) -> Resolver<InstructionGroups> {
+    Resolver::Missing(MissingAccounts {
+        accounts: vec![pubkey],
+        address_lookup_tables: vec![],
+    })
+}
+
 pub fn accounts_to_execute2(ctx: Context<Resolve>) -> Resolver<InstructionGroups> {
-    // TODO: use an example where we load an account but not necessarily use its
-    // pubkey in the final thing (e.g. reading stuff off state)
-    // TODO: example for parallel loading (to reduce number of roundtrips when we can)
-    let ctx_accs = RemainingAccounts::from(ctx);
+    // This example iteratively loads the accounts, as it simulates a condition where looking up a subsequent account
+    // relies on data within a previous account.
+    //
+    // See example-lookup-table-resolution for requesting and resolving multiple accounts at once
+    // in addition to handling results larger than the instruction return size of 1024.
     let (foo_key, _) = Pubkey::find_program_address(&[b"foo"], &crate::ID);
-    let foo = ctx_accs.load_deserialize::<MyAccount>(foo_key)?;
+    let foo = if let Some(acc_info) = find_account(ctx.remaining_accounts, foo_key) {
+        MyAccount::try_deserialize(&mut &acc_info.data.borrow()[..]).unwrap()
+    } else {
+        return missing_account(foo_key);
+    };
     let (bar_key, _) = Pubkey::find_program_address(&[b"bar", &[foo.data]], &crate::ID);
-    let bar = ctx_accs.load_deserialize::<MyAccount>(bar_key)?;
+    let bar = if let Some(acc_info) = find_account(ctx.remaining_accounts, bar_key) {
+        MyAccount::try_deserialize(&mut &acc_info.data.borrow()[..]).unwrap()
+    } else {
+        return missing_account(bar_key);
+    };
     let (baz_key, _) = Pubkey::find_program_address(&[b"baz", &[bar.data]], &crate::ID);
-    let baz = ctx_accs.load_deserialize::<MyAccount>(baz_key)?;
+    let baz = if let Some(acc_info) = find_account(ctx.remaining_accounts, baz_key) {
+        MyAccount::try_deserialize(&mut &acc_info.data.borrow()[..]).unwrap()
+    } else {
+        return missing_account(baz_key);
+    };
     let (qux_key, _) = Pubkey::find_program_address(&[b"qux", &[baz.data]], &crate::ID);
     let accs = accounts::ExampleInstruction {
         payer: RESOLVER_PUBKEY_PAYER,
