@@ -1,7 +1,7 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction, InstructionData};
 use executor_account_resolver_svm::{
-    InstructionGroup, InstructionGroups, MissingAccounts, Resolver, RESOLVER_EXECUTE_VAA_V1,
-    RESOLVER_PUBKEY_PAYER,
+    find_account, missing_account, InstructionGroup, InstructionGroups, Resolver,
+    RESOLVER_EXECUTE_VAA_V1, RESOLVER_PUBKEY_PAYER,
 };
 
 declare_id!("8mjNDtRMN7Sjq2ZVjCjKJUUaCfUdfZLoeYREmYs3yKSi");
@@ -30,20 +30,6 @@ pub mod example_iterative_resolution {
         ctx.accounts.qux.set_inner(MyAccount { data: 4 });
         Ok(())
     }
-}
-
-pub fn find_account<'c, 'info>(
-    accs: &'c [AccountInfo<'info>],
-    pubkey: Pubkey,
-) -> Option<&'c AccountInfo<'info>> {
-    accs.iter().find(|acc_info| *acc_info.key == pubkey)
-}
-
-pub fn missing_account(pubkey: Pubkey) -> Resolver<InstructionGroups> {
-    Resolver::Missing(MissingAccounts {
-        accounts: vec![pubkey],
-        address_lookup_tables: vec![],
-    })
 }
 
 pub fn accounts_to_execute2(ctx: Context<Resolve>) -> Resolver<InstructionGroups> {
