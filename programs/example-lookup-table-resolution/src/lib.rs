@@ -9,7 +9,8 @@ use anchor_lang::solana_program::{
 use anchor_lang::{system_program, InstructionData};
 use executor_account_resolver_svm::{
     InstructionGroup, InstructionGroups, MissingAccounts, Resolver, RESOLVER_EXECUTE_VAA_V1,
-    RESOLVER_PUBKEY_PAYER, RESOLVER_RESULT_ACCOUNT_SEED,
+    RESOLVER_PUBKEY_PAYER, RESOLVER_RESULT_ACCOUNT, RESOLVER_RESULT_ACCOUNT_INIT_SIZE,
+    RESOLVER_RESULT_ACCOUNT_SEED,
 };
 
 declare_id!("v3pcEfuzsPBGQ8Zy1jvtWq4iwugEWC2f3xgPd32eZgQ");
@@ -231,7 +232,7 @@ pub struct LUT {
     pub address: Pubkey,
 }
 
-#[account]
+#[account(discriminator = RESOLVER_RESULT_ACCOUNT)]
 pub struct ExecutorAccountResolverResult(Resolver<InstructionGroups>);
 
 #[account]
@@ -247,7 +248,7 @@ pub struct Initialize<'info> {
     #[account(
         init,
         payer = payer,
-        space = 13,
+        space = 8 + RESOLVER_RESULT_ACCOUNT_INIT_SIZE,
         seeds = [RESOLVER_RESULT_ACCOUNT_SEED],
         bump
     )]
