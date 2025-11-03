@@ -64,6 +64,10 @@ pub const RESOLVER_PUBKEY_POSTED_VAA: Pubkey =
 /// See https://github.com/wormhole-foundation/wormhole/tree/fe4a33bafae3eb2ba51dff16efaab70e50be111d/svm/wormhole-core-shims/programs/verify-vaa for more info.
 pub const RESOLVER_PUBKEY_SHIM_VAA_SIGS: Pubkey =
     Pubkey::new_from_array(*b"shim_vaa_sigs_000000000000000000");
+/// A placeholder to represent the Wormhole Guardian Set account.
+/// This will be replaced by the relayer with the actual guardian set account.
+pub const RESOLVER_PUBKEY_GUARDIAN_SET: Pubkey =
+    Pubkey::new_from_array(*b"guardian_set_0000000000000000000");
 /// A placeholder to represent a new keypair's pubkey.
 /// This will be replaced by the relayer with a newly generated keypair.
 /// This can be used to make a new account in one instruction and refer to the same account in subsequent instructions.
