@@ -10,6 +10,7 @@ skip-lint = false
 [programs.localnet]
 example-lookup-table-resolution = "v3pcEfuzsPBGQ8Zy1jvtWq4iwugEWC2f3xgPd32eZgQ"
 example_iterative_resolution = "8mjNDtRMN7Sjq2ZVjCjKJUUaCfUdfZLoeYREmYs3yKSi"
+example_shim_vaa_verification = "EJqbvws7tkP7twXZQZvENi1qRiJEqKeP5NTmzvihoPsZ"
 executor_account_resolver_svm_program = "GeSLWQHGZRWhrdqo5Zvaa3JonhzQmfEmJSuHJwmRebPw"
 
 [registry]
