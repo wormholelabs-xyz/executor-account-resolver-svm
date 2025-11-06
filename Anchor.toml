@@ -9,6 +9,7 @@ skip-lint = false
 
 [programs.localnet]
 example-lookup-table-resolution = "v3pcEfuzsPBGQ8Zy1jvtWq4iwugEWC2f3xgPd32eZgQ"
+example-shim-vaa-verification = "4uYX1FAV3RUzJ88efJZof9FJn5QqKrRpxzHTm1qZchLR"
 example_iterative_resolution = "8mjNDtRMN7Sjq2ZVjCjKJUUaCfUdfZLoeYREmYs3yKSi"
 executor_account_resolver_svm_program = "GeSLWQHGZRWhrdqo5Zvaa3JonhzQmfEmJSuHJwmRebPw"
 
@@ -21,3 +22,18 @@ wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+[test.validator]
+url = "https://api.mainnet-beta.solana.com"
+
+## CORE BRIDGE MAINNET
+### Wormhole Core Bridge Program (Mainnet)
+[[test.validator.clone]]
+address = "worm2ZoG2kUd4vFXhvjh93UUH596ayRfgQ2MgjNMTth"
+### Guardian Set 4
+[[test.validator.clone]]
+address = "AFEXK4A1BU7BZfi8niAmker98LH9EARB544wKGPXwMyy"
+
+## VERIFICATION SHIM
+[[test.validator.clone]]
+address = "EFaNWErqAtVWufdNb7yofSHHfWFos843DFpu4JBw24at"

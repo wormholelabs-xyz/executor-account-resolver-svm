@@ -459,6 +459,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "const-crypto"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c06f1eb05f06cf2e380fdded278fbf056a38974299d77960555a311dcf91a52"
+dependencies = [
+ "keccak-const",
+ "sha2-const-stable",
+]
+
+[[package]]
 name = "constant_time_eq"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -557,6 +567,15 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "executor-account-resolver-svm",
+]
+
+[[package]]
+name = "example-shim-vaa-verification"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "executor-account-resolver-svm",
+ "wormhole-svm-definitions",
 ]
 
 [[package]]
@@ -703,6 +722,12 @@ checksum = "ecc2af9a1119c51f12a14607e783cb977bde58bc069ff0c3da1095e635d70654"
 dependencies = [
  "cpufeatures",
 ]
+
+[[package]]
+name = "keccak-const"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57d8d8ce877200136358e0bbff3a77965875db3af755a11e1fa6b1b3e2df13ea"
 
 [[package]]
 name = "lazy_static"
@@ -1127,6 +1152,12 @@ dependencies = [
  "cpufeatures",
  "digest 0.10.7",
 ]
+
+[[package]]
+name = "sha2-const-stable"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f179d4e11094a893b82fff208f74d448a7512f99f5a0acbd5c679b705f83ed9"
 
 [[package]]
 name = "sha3"
@@ -2245,6 +2276,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59690dea168f2198d1a3b0cac23b8063efcd11012f10ae4698f284808c8ef603"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "wormhole-svm-definitions"
+version = "0.1.0"
+source = "git+https://github.com/wormhole-foundation/wormhole.git?rev=0231deba271494519717c8b5e583ce89e428de4c#0231deba271494519717c8b5e583ce89e428de4c"
+dependencies = [
+ "borsh 1.5.5",
+ "cfg-if",
+ "const-crypto",
+ "sha2-const-stable",
+ "solana-program",
 ]
 
 [[package]]
