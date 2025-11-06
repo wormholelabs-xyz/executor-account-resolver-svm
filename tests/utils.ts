@@ -27,7 +27,9 @@ type InstructionGroup = {
 export async function resolveInstructions(
   provider: anchor.Provider,
   programId: anchor.web3.PublicKey,
-  payerWallet: anchor.web3.Keypair
+  payerWallet: anchor.web3.Keypair,
+  vaaBody: Buffer = Buffer.from(""),
+  guardianSet?: anchor.web3.PublicKey
 ): Promise<InstructionGroup[]> {
   const overrideIdl = {
     ...ExecutorAccountResolverSvmProgramIdl,
@@ -40,16 +42,19 @@ export async function resolveInstructions(
   let payerConst = new anchor.web3.PublicKey(
     Buffer.from("payer_00000000000000000000000000")
   );
+  let gsConst = new anchor.web3.PublicKey(
+    Buffer.from("guardian_set_0000000000000000000")
+  );
   const remainingAccounts: AccountMeta[] = [];
   const luts: AddressLookupTableAccount[] = [];
   let runs = 0;
-  while (true) {
+  while (runs < 10) {
     runs++;
     // support simulation with lookup table
     // adapted from https://github.com/solana-foundation/anchor/blob/0bdfa3f760635cc83bbda13f9a9d22d1558d1776/ts/packages/anchor/src/program/namespace/views.ts#L26C7-L42C39
     console.log(remainingAccounts.length);
     const ix = await program.methods
-      .resolveExecuteVaaV1(Buffer.from(""))
+      .resolveExecuteVaaV1(vaaBody)
       .remainingAccounts(remainingAccounts)
       .instruction();
     let { blockhash } = await program.provider.connection.getLatestBlockhash();
@@ -113,10 +118,18 @@ export async function resolveInstructions(
       return result.resolved[0][0];
     } else {
       let newAccountMetas = result.missing[0].accounts.map((key) => {
+        let pubkey = new anchor.web3.PublicKey(key);
+        if (pubkey.equals(payerConst)) {
+          pubkey = payerWallet.publicKey;
+        } else if (pubkey.equals(gsConst)) {
+          if (!guardianSet) {
+            throw new Error("Guardian set requested but not provided");
+          }
+          console.log(guardianSet.toString());
+          pubkey = guardianSet;
+        }
         return {
-          pubkey: new anchor.web3.PublicKey(key).equals(payerConst)
-            ? payerWallet.publicKey
-            : key,
+          pubkey,
           isSigner: false,
           isWritable: resultAccount.equals(key) ? true : false,
         };
@@ -132,4 +145,5 @@ export async function resolveInstructions(
       luts.push(...newLookupTables);
     }
   }
+  throw new Error("Run limit exhausted");
 }
